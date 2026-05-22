@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run db:generate && next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "regions": ["cdg1"]
+}

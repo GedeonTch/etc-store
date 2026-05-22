@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+prisma/migrations/
+npm-debug.log*
+.DS_Store
+.vercel
+public/categories/
