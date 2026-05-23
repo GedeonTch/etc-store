@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!isDev && token) {
       try {
         const { put } = await import("@vercel/blob");
-        
+
         const timestamp = Date.now();
         const ext = file.name.split(".").pop() || "jpg";
         const filename = `categories/${nomCategorie.toLowerCase().replace(/\s+/g, "-")}-${timestamp}.${ext}`;
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ imagePath: dataUrl, publicId: null });
   } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: "Erreur lors du traitement de l'image: " + (err instanceof Error ? err.message : "Erreur inconnue")
     }, { status: 500 });
   }
