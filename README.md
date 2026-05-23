@@ -1,110 +1,176 @@
-# ETCH Store — Guide d'installation et déploiement
+# 🛍️ ETCH Store — E-commerce Moderne
 
 **ÉTABLISSEMENT TCHIBANVUNYA** — *L'Europe à votre portée*
 
----
-
-## Stack
-
-Next.js 14 · Tailwind CSS · Three.js · Framer Motion · MySQL (Railway) · Prisma · NextAuth.js · Cloudinary · Resend · next-themes · Vercel
+Une plateforme e-commerce robuste et scalable pour la vente d'appareils d'occasion avec gestion admin complète.
 
 ---
 
-## Installation locale
+## 🏗️ Architecture
 
-### 1. Installer les dépendances
+| Composant | Technologie |
+|-----------|-------------|
+| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind CSS |
+| **Backend** | Next.js API Routes, Node.js |
+| **Base de données** | MySQL (Railway) |
+| **ORM** | Prisma |
+| **Authentification** | NextAuth.js v4 |
+| **Stockage images** | Vercel Blob (Production), Base64 (Dev) |
+| **Animations** | Framer Motion, Three.js |
+| **Hébergement** | Vercel |
+| **Email** | Resend |
+| **CDN Images** | Cloudinary (optionnel) |
+
+---
+
+## 🚀 Déploiement rapide (Production)
+
+### Option 1: Déployer sur Vercel (Recommandé)
+
+1. **Créer un compte Vercel**
+   - Va sur [vercel.com](https://vercel.com)
+   - Connecte-toi avec GitHub
+
+2. **Importer le projet**
+   - Clique "New Project"
+   - Sélectionne ce repo
+   - Clique "Import"
+
+3. **Ajouter les variables d'environnement**
+   - Dans Settings → Environment Variables, ajoute:
+   ```
+   DATABASE_URL=mysql://...
+   NEXTAUTH_URL=https://ton-app.vercel.app
+   NEXTAUTH_SECRET=<clé-secrète>
+   BLOB_READ_WRITE_TOKEN=<token-vercel>
+   ADMIN_EMAIL=...
+   FROM_EMAIL=...
+   ```
+
+4. **Deploy**
+   - Clique "Deploy"
+   - Attends 3-5 minutes ✨
+
+---
+
+## 💻 Installation locale (Développement)
+
+### Prérequis
+- Node.js 18+
+- npm ou yarn
+- Compte Railway (MySQL)
+
+### Étapes
+
+1. **Cloner et installer**
+   ```bash
+   git clone https://github.com/GedeonTch/etch-store.git
+   cd etch-store
+   npm install
+   ```
+
+2. **Configuration des variables d'environnement**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Remplis les variables essentielles:
+   - `DATABASE_URL`: URL de ta base MySQL
+   - `NEXTAUTH_URL`: `http://localhost:3000`
+   - `NEXTAUTH_SECRET`: `openssl rand -base64 32`
+
+3. **Initialiser la base de données**
+   ```bash
+   npm run db:generate
+   npm run db:push
+   npm run db:seed
+   ```
+
+4. **Lancer le serveur**
+   ```bash
+   npm run dev
+   ```
+   
+   Accès: [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📋 Variables d'environnement essentielles
+
+| Variable | Obligatoire | Description |
+|----------|:-----------:|-------------|
+| `DATABASE_URL` | ✅ | MySQL Railway |
+| `NEXTAUTH_URL` | ✅ | URL de l'app |
+| `NEXTAUTH_SECRET` | ✅ | Clé session (32 chars base64) |
+| `BLOB_READ_WRITE_TOKEN` | ✅ (Prod) | Vercel Blob token |
+| `ADMIN_EMAIL` | ❌ | Email notifications |
+| `FROM_EMAIL` | ❌ | Email expéditeur (Resend) |
+| `RESEND_API_KEY` | ❌ | Resend API |
+| `CLOUDINARY_*` | ❌ | Cloudinary (optionnel) |
+
+---
+
+## 🛠️ Commandes utiles
 
 ```bash
-cd etch-store
-npm install
-```
-
-### 2. Variables d'environnement
-
-```bash
-cp .env.example .env.local
-# Remplir chaque variable dans .env.local
-```
-
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | URL MySQL Railway (`mysql://user:pass@host:port/db`) |
-| `NEXTAUTH_URL` | URL de l'app (`http://localhost:3000` en dev) |
-| `NEXTAUTH_SECRET` | Clé secrète — `openssl rand -base64 32` |
-| `CLOUDINARY_CLOUD_NAME` | Cloud name Cloudinary |
-| `CLOUDINARY_API_KEY` | Clé API Cloudinary |
-| `CLOUDINARY_API_SECRET` | Secret API Cloudinary |
-| `RESEND_API_KEY` | Clé API Resend (`re_...`) |
-| `ADMIN_EMAIL` | Email destination notifications |
-| `FROM_EMAIL` | Email expéditeur (vérifié dans Resend) |
-
-### 3. Railway (MySQL)
-
-1. [railway.app](https://railway.app) → New Project → MySQL
-2. Copier la `DATABASE_URL` depuis l'onglet Connect
-
-### 4. Cloudinary
-
-1. [cloudinary.com](https://cloudinary.com) → Dashboard → copier les clés
-2. Settings → Upload → Add upload preset → nom : `etch_products` → mode **Unsigned**
-
-### 5. Resend
-
-1. [resend.com](https://resend.com) → API Keys → Create API Key
-2. Domains → ajouter et vérifier votre domaine
-
-### 6. Initialiser la base de données
-
-```bash
-npm run db:generate   # Générer le client Prisma
-npm run db:push       # Pousser le schéma vers Railway
-npm run db:seed       # Créer le compte admin initial
-```
-
-Connexion admin après seed :
-- Email : `etsTchibanvunya@gmail.com`
-- Mot de passe : `ADMIN123`
-- ⚠️ **Changez ce mot de passe immédiatement** depuis `/admin/parametres`
-
-### 7. Lancer
-
-```bash
-npm run dev
-# → http://localhost:3000
+npm run dev              # Démarrer en développement
+npm run build            # Build production
+npm start                # Démarrer la version produite
+npm run lint             # Linter le code
+npm run db:generate      # Générer client Prisma
+npm run db:push          # Synchroniser schéma BD
+npm run db:seed          # Charger données initiales
+npm run db:studio        # Ouvrir Prisma Studio
+npm run create-super-admin   # Créer un super-admin
+npm run update-categories    # Mettre à jour catégories
 ```
 
 ---
 
-## Déploiement Vercel
+## 📚 Documentation
 
-```bash
-git init && git add . && git commit -m "Initial commit"
-git remote add origin <votre-repo>
-git push -u origin main
-```
-
-1. [vercel.com](https://vercel.com) → New Project → importer le repo
-2. Ajouter toutes les variables d'environnement
-3. Deploy
-
-Après déploiement, mettre à jour `NEXTAUTH_URL` avec l'URL Vercel.
+- **QUICK_START.md** — Démarrage rapide avec exemples
+- **IMPROVEMENTS.md** — Fonctionnalités avancées
+- **DEPLOYMENT.md** — Guide détaillé de déploiement
 
 ---
 
-## Commandes
+## 📱 Fonctionnalités principales
 
-```bash
-npm run dev          # Développement
-npm run build        # Build production
-npm run db:generate  # Générer client Prisma
-npm run db:push      # Pousser schéma
-npm run db:seed      # Données initiales
-npm run db:studio    # Interface Prisma Studio
-```
+✅ **Authentification** — Admin, Adjoint, Client avec sessions sécurisées  
+✅ **Gestion produits** — Catalogue, catégories, images  
+✅ **Panier dynamique** — Sélection et achat produits  
+✅ **Système messages** — Contact admin  
+✅ **Gestion utilisateurs** — Recherche, filtrage, export CSV/JSON  
+✅ **Panel admin** — Dashboard, statistiques, paramètres  
+✅ **Upload sécurisé** — Images base64 ou Vercel Blob  
+✅ **Responsive design** — Mobile, tablet, desktop  
 
 ---
 
-## Créateur
+## 🔒 Sécurité
 
-**Tchibanvunya Gedeon** — IT · Développement & Cybersécurité  
-📧 tchibanvunyagedeon@gmail.com · 💬 +257 79 640 420
+- Authentification NextAuth.js avec sessions JWT
+- Mots de passe hashés (bcrypt, salt: 12)
+- Protection brute-force (5 tentatives/30min)
+- Validation côté serveur obligatoire
+- Routes protégées par rôle
+- CSRF protection
+
+---
+
+## 📞 Support & Contact
+
+**Développeur:** Tchibanvunya Gedeon  
+📧 [tchibanvunyagedeon@gmail.com](mailto:tchibanvunyagedeon@gmail.com)  
+💬 +257 79 640 420
+
+---
+
+## 📄 Licence
+
+Propriétaire — ÉTABLISSEMENT TCHIBANVUNYA
+
+---
+
+**Dernière mise à jour:** Mai 2026 | **Version:** 1.1
