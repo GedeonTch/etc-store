@@ -2,7 +2,24 @@
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!resend) resend = new Resend(apiKey);
+  return resend;
+}
+
+async function envoyerEmail(options: Parameters<Resend["emails"]["send"]>[0]) {
+  const client = getResend();
+  if (!client) {
+    console.warn("RESEND_API_KEY non configurée — email ignoré");
+    return null;
+  }
+  return client.emails.send(options);
+}
+
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "etsTchibanvunya@gmail.com";
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@etch-store.com";
 
@@ -62,7 +79,7 @@ export async function envoyerEmailMessageClient(data: {
       <div style="line-height:1.6">${data.contenu.replace(/\n/g, "<br>")}</div>
     </div>`;
 
-  return resend.emails.send({
+  return envoyerEmail({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `📩 Nouveau message de ${data.nomClient} — ETCH`,
@@ -87,7 +104,7 @@ export async function envoyerEmailConnexionReussie(
     </div>
     <p style="color:#86efac">✅ Connexion réussie au panneau d'administration.</p>`;
 
-  return resend.emails.send({
+  return envoyerEmail({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `✅ Connexion admin — ${nom}`,
@@ -109,7 +126,7 @@ export async function envoyerEmailTentativeEchouee(
       <div class="row"><span class="lbl">Tentatives</span><span class="val"><span class="badge-danger">${nbTentatives} / 5</span></span></div>
     </div>`;
 
-  return resend.emails.send({
+  return envoyerEmail({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `⚠️ Tentative échouée (${nbTentatives}/5) — ETCH Admin`,
@@ -134,7 +151,7 @@ export async function envoyerEmailIPBloquee(
     <p style="color:#fca5a5">🚫 IP bloquée automatiquement pendant 30 minutes.</p>
     <p>Déblocage manuel possible depuis le panneau admin → Logs.</p>`;
 
-  return resend.emails.send({
+  return envoyerEmail({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `🚫 IP bloquée : ${ip} — ETCH Admin`,
@@ -163,7 +180,7 @@ export async function envoyerEmailRemiseEnStock(
       Vous recevez cet email car vous avez demandé à être averti(e) de la disponibilité de ce produit.
     </p>`;
 
-  return resend.emails.send({
+  return envoyerEmail({
     from: FROM_EMAIL,
     to: emailClient,
     subject: `✅ "${produitTitre}" est disponible — ETCH`,
