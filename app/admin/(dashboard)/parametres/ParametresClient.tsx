@@ -7,7 +7,7 @@ import { compresserImage } from "@/lib/utils";
 interface Props { parametres: Record<string, string> }
 
 type Categorie = { nom: string; image: string };
-type MembreEquipe = { nom: string; poste: string; email: string; photo: string };
+type MembreEquipe = { nom: string; poste: string; photo: string; description?: string; whatsapp?: string };
 
 export default function ParametresClient({ parametres: init }: Props) {
   const router = useRouter();
@@ -42,12 +42,19 @@ export default function ParametresClient({ parametres: init }: Props) {
   const [equipe, setEquipe] = useState(() => {
     try {
       const parsed = JSON.parse(init.apropos_equipe || "[]");
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((m: Record<string, string>) => ({
+        nom: m.nom || "",
+        poste: m.poste || "",
+        photo: m.photo || "",
+        description: m.description || "",
+        whatsapp: m.whatsapp || "",
+      }));
     } catch {
       return [];
     }
   }) as [MembreEquipe[], (e: MembreEquipe[]) => void];
-  const [nouveauMembre, setNouveauMembre] = useState({ nom: "", poste: "", email: "" });
+  const [nouveauMembre, setNouveauMembre] = useState({ nom: "", poste: "", description: "", whatsapp: "" });
   const [photoMembre, setPhotoMembre] = useState<File | null>(null);
   const [editingMembre, setEditingMembre] = useState<number | null>(null);
   const [editPhotoMembre, setEditPhotoMembre] = useState<File | null>(null);
@@ -386,7 +393,7 @@ export default function ParametresClient({ parametres: init }: Props) {
       {/* Page À propos */}
       <Section titre="Page À propos">
         <p className="text-xs text-[var(--text)]/40 mb-4">
-          Modifiez le contenu de la page /a-propos et gérez les membres de l'équipe avec leurs photos.
+          Les membres ajoutés ici apparaissent sur /a-propos. Les comptes admin ne sont plus affichés automatiquement (sécurité : pas d&apos;email de connexion public).
         </p>
         <div className="space-y-4 mb-6">
           <div>
@@ -429,7 +436,7 @@ export default function ParametresClient({ parametres: init }: Props) {
                   <img src={m.photo || "/logo-etch.png"} alt={m.nom} className="w-12 h-12 rounded-full object-cover cursor-pointer" onClick={() => setEditingMembre(i)} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--text)]">{m.nom}</p>
-                    <p className="text-xs text-[var(--text)]/50">{m.poste}{m.email ? ` · ${m.email}` : ""}</p>
+                    <p className="text-xs text-[var(--text)]/50">{m.poste}{m.whatsapp ? ` · WA: ${m.whatsapp}` : ""}</p>
                   </div>
                   <button onClick={() => setEditingMembre(i)} className="text-xs text-[var(--gold)]">Photo</button>
                   <button onClick={() => setEquipe(equipe.filter((_, j) => j !== i))} className="text-xs text-red-400">Suppr.</button>
@@ -442,15 +449,22 @@ export default function ParametresClient({ parametres: init }: Props) {
         <div className="space-y-3 mb-4 p-4 rounded-xl bg-[var(--bg)] border border-[var(--border)]/50">
           <input type="text" placeholder="Nom *" value={nouveauMembre.nom} onChange={(e) => setNouveauMembre({ ...nouveauMembre, nom: e.target.value })} className={inputCls} />
           <input type="text" placeholder="Poste (ex: Directeur, Agent...)" value={nouveauMembre.poste} onChange={(e) => setNouveauMembre({ ...nouveauMembre, poste: e.target.value })} className={inputCls} />
-          <input type="email" placeholder="Email (optionnel)" value={nouveauMembre.email} onChange={(e) => setNouveauMembre({ ...nouveauMembre, email: e.target.value })} className={inputCls} />
+          <textarea placeholder="Description courte (optionnel)" rows={2} value={nouveauMembre.description} onChange={(e) => setNouveauMembre({ ...nouveauMembre, description: e.target.value })} className={`${inputCls} resize-none`} />
+          <input type="text" placeholder="WhatsApp (sans +, ex: 243997220295)" value={nouveauMembre.whatsapp} onChange={(e) => setNouveauMembre({ ...nouveauMembre, whatsapp: e.target.value })} className={inputCls} />
           <input type="file" accept="image/*" onChange={(e) => setPhotoMembre(e.target.files?.[0] || null)} className="w-full text-sm text-[var(--text)]/60 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-[var(--gold)]/20 file:text-[var(--gold)]" />
           <button onClick={async () => {
             if (!nouveauMembre.nom.trim() || !photoMembre) { alert("Nom et photo requis"); return; }
             setUploadingImage(true);
             try {
               const photo = await uploadImage(photoMembre, nouveauMembre.nom, "equipe");
-              setEquipe([...equipe, { nom: nouveauMembre.nom.trim(), poste: nouveauMembre.poste.trim(), email: nouveauMembre.email.trim(), photo }]);
-              setNouveauMembre({ nom: "", poste: "", email: "" }); setPhotoMembre(null);
+              setEquipe([...equipe, {
+                nom: nouveauMembre.nom.trim(),
+                poste: nouveauMembre.poste.trim(),
+                description: nouveauMembre.description.trim(),
+                whatsapp: nouveauMembre.whatsapp.trim(),
+                photo,
+              }]);
+              setNouveauMembre({ nom: "", poste: "", description: "", whatsapp: "" }); setPhotoMembre(null);
             } catch (e) { alert(e instanceof Error ? e.message : "Erreur"); }
             finally { setUploadingImage(false); }
           }} disabled={uploadingImage} className="w-full px-4 py-2.5 rounded-xl bg-[var(--gold)] text-[#0A0A0A] text-sm font-semibold disabled:opacity-50">

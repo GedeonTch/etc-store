@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { uploadImage } from "@/lib/upload-image";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -22,52 +23,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = await file.arrayBuffer();
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-    const isProd = process.env.NODE_ENV === "production";
-
-    if (token) {
-      try {
-        const { put } = await import("@vercel/blob");
-        const timestamp = Date.now();
-        const ext = file.name.split(".").pop() || "jpg";
-        const slug = nomCategorie.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-        const filename = `${dossier}/${slug}-${timestamp}.${ext}`;
-
-        const blob = await put(filename, buffer, {
-          access: "public",
-          contentType: file.type || "image/jpeg",
-          token,
-        });
-
-        return NextResponse.json({ imagePath: blob.url, publicId: blob.pathname });
-      } catch (blobErr) {
-        console.error("Vercel Blob error:", blobErr);
-        if (isProd) {
-          return NextResponse.json({
-            error: "Échec upload Vercel Blob. Vérifiez BLOB_READ_WRITE_TOKEN.",
-          }, { status: 500 });
-        }
-      }
-    }
-
-    if (isProd) {
-      return NextResponse.json({
-        error: "BLOB_READ_WRITE_TOKEN requis en production pour stocker les images.",
-      }, { status: 503 });
-    }
-
-    // Dev uniquement : base64 (léger après compression client)
-    if (buffer.byteLength > 200 * 1024) {
-      return NextResponse.json({ error: "Image trop grande (max 200KB en dev)" }, { status: 400 });
-    }
-
-    const base64 = Buffer.from(buffer).toString("base64");
-    const mimeType = file.type || "image/jpeg";
-    return NextResponse.json({ imagePath: `data:${mimeType};base64,${base64}`, publicId: null });
+    const { url } = await uploadImage(
+      buffer,
+      dossier,
+      nomCategorie,
+      file.name,
+      file.type || "image/jpeg"
+    );
+    return NextResponse.json({ imagePath: url, publicId: null });
   } catch (err) {
-    console.error("Upload error:", err);
+    console.error("Upload catégorie:", err);
     return NextResponse.json({
-      error: "Erreur lors du traitement de l'image: " + (err instanceof Error ? err.message : "Erreur inconnue"),
+      error: err instanceof Error ? err.message : "Erreur upload",
     }, { status: 500 });
   }
 }

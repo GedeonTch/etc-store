@@ -5,6 +5,8 @@ import Link from "next/link";
 import Hero3D from "@/components/Hero3D";
 import ProductCard from "@/components/ProductCard";
 import { useLangue } from "@/contexts/LangueContext";
+import type { ParametresSite } from "@/lib/parametres-public";
+import { whatsappHref } from "@/lib/parametres-public";
 
 interface Props {
   produitsVedette: any[];
@@ -12,9 +14,10 @@ interface Props {
   tousLesProduits: any[];
   tauxCDF: number;
   categories: Array<{ nom: string; image: string }>;
+  siteParams: ParametresSite;
 }
 
-export default function HomeClient({ produitsVedette, produitsRecents, tousLesProduits, tauxCDF, categories }: Props) {
+export default function HomeClient({ produitsVedette, produitsRecents, tousLesProduits, tauxCDF, categories, siteParams }: Props) {
   const { t } = useLangue();
 
   return (
@@ -167,10 +170,10 @@ export default function HomeClient({ produitsVedette, produitsRecents, tousLesPr
               Une question ? Contactez-nous directement
             </p>
             <p className="text-[var(--text)]/60 mb-8">
-              Avenue Patrice Emery Lumumba, Quartier Labotte, Bukavu — en diagonale de l'Ecobank
+              {siteParams.adresse || "Avenue Patrice Emery Lumumba, Quartier Labotte, Bukavu"}
             </p>
             <a
-              href="https://wa.me/25766504165"
+              href={whatsappHref(siteParams.whatsapp || "25766504165")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-green-600 hover:bg-green-500 text-white font-semibold transition-all duration-200 hover:scale-105 shadow-lg shadow-green-900/30"

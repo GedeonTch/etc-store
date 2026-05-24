@@ -11,21 +11,15 @@ export const metadata: Metadata = {
     "Découvrez l'équipe de l'Établissement Tchibanvunya (ETCH) à Bukavu. Notre mission, nos valeurs et nos agents.",
 };
 
-export default async function AProposPage() {
-  const agents = await prisma.user.findMany({
-    where: {
-      role: { in: ["SUPER_ADMIN", "ADJOINT", "MEMBRE"] },
-    },
-    select: {
-      id: true,
-      nom: true,
-      email: true,
-      role: true,
-      photo: true,
-    },
-    orderBy: { creeLe: "asc" },
-  });
+export type MembreEquipePublic = {
+  nom: string;
+  poste: string;
+  photo: string;
+  description?: string;
+  whatsapp?: string;
+};
 
+export default async function AProposPage() {
   const parametres = await prisma.parametre.findMany({
     where: {
       cle: {
@@ -41,16 +35,23 @@ export default async function AProposPage() {
   const params: Record<string, string> = {};
   for (const p of parametres) params[p.cle] = p.valeur;
 
-  let equipeCustom: Array<{ nom: string; poste: string; email: string; photo: string }> = [];
+  let equipe: MembreEquipePublic[] = [];
   try {
     const parsed = JSON.parse(params.apropos_equipe || "[]");
-    if (Array.isArray(parsed)) equipeCustom = parsed;
+    if (Array.isArray(parsed)) {
+      equipe = parsed.map((m: Record<string, string>) => ({
+        nom: m.nom || "",
+        poste: m.poste || "",
+        photo: m.photo || "",
+        description: m.description || "",
+        whatsapp: m.whatsapp || "",
+      })).filter((m) => m.nom.trim());
+    }
   } catch { /* ignore */ }
 
   return (
     <AProposClient
-      agents={JSON.parse(JSON.stringify(agents))}
-      equipeCustom={JSON.parse(JSON.stringify(equipeCustom))}
+      equipe={JSON.parse(JSON.stringify(equipe))}
       params={params}
     />
   );

@@ -39,6 +39,8 @@ export async function PUT(req: NextRequest) {
   revalidatePath("/");
   revalidatePath("/catalogue");
   revalidatePath("/a-propos");
+  revalidatePath("/contact");
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ success: true });
 }

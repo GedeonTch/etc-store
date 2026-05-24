@@ -10,6 +10,7 @@ import ThemeToggle from "./ThemeToggle";
 import { useLangue } from "@/contexts/LangueContext";
 import { isClient } from "@/lib/session";
 import type { Langue } from "@/lib/i18n";
+import type { ParametresSite } from "@/lib/parametres-public";
 import MessageNotificationBadge from "./MessageNotificationBadge";
 
 const LANGUES: { code: Langue; label: string; flag: string }[] = [
@@ -18,8 +19,9 @@ const LANGUES: { code: Langue; label: string; flag: string }[] = [
   { code: "sw", label: "Kiswahili", flag: "🇨🇩" },
 ];
 
-export default function Header() {
+export default function Header({ siteParams = {} }: { siteParams?: ParametresSite }) {
   const { t, langue, setLangue } = useLangue();
+  const marque = siteParams.marque || "ETCH";
   const { data: session } = useSession();
   const pathname = usePathname();
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -78,11 +80,11 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3 group">
             <motion.div whileHover={{ scale: 1.05 }} className="relative w-9 h-9">
-              <Image src="/logo-etch.png" alt="ETCH" fill className="object-contain"
+              <Image src="/logo-etch.png" alt={marque} fill className="object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </motion.div>
             <span className="font-playfair text-2xl font-bold tracking-widest text-[var(--gold)] group-hover:opacity-80 transition-opacity">
-              ETCH
+              {marque}
             </span>
           </Link>
 

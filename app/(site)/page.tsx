@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { chargerParametresSite } from "@/lib/parametres-site";
 import HomeClient from "./HomeClient";
 
 // Pas de cache — toujours lire les données fraîches depuis la DB
@@ -44,6 +45,8 @@ export default async function HomePage() {
   const categoriesParam = await prisma.parametre.findUnique({ where: { cle: "categories" } });
   const categories: Array<{ nom: string; image: string }> = categoriesParam ? JSON.parse(categoriesParam.valeur) : [];
 
+  const siteParams = await chargerParametresSite();
+
   return (
     <HomeClient
       produitsVedette={JSON.parse(JSON.stringify(produitsVedette))}
@@ -51,6 +54,7 @@ export default async function HomePage() {
       tousLesProduits={JSON.parse(JSON.stringify(tousLesProduits))}
       tauxCDF={tauxCDF}
       categories={categories}
+      siteParams={siteParams}
     />
   );
 }
