@@ -16,10 +16,15 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 interface Agent { id: string; nom: string; email: string; role: string; photo: string | null }
-interface Props { agents: Agent[]; params: Record<string, string> }
+interface MembreCustom { nom: string; poste: string; email: string; photo: string }
+interface Props { agents: Agent[]; equipeCustom: MembreCustom[]; params: Record<string, string> }
 
-export default function AProposClient({ agents, params }: Props) {
+export default function AProposClient({ agents, equipeCustom, params }: Props) {
   const { t } = useLangue();
+
+  const equipeAffichee = equipeCustom.length > 0
+    ? equipeCustom.map((m) => ({ id: m.nom, nom: m.nom, email: m.email, role: m.poste, photo: m.photo || null }))
+    : agents;
 
   const valeurs = [
     {
@@ -70,7 +75,7 @@ export default function AProposClient({ agents, params }: Props) {
             className="mx-auto h-px w-24 origin-center mb-6" style={{ background: "linear-gradient(90deg,transparent,#C9A84C,transparent)" }} />
           <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
             className="text-lg leading-relaxed max-w-2xl mx-auto" style={{ color: "rgba(245,240,232,0.6)" }}>
-            {params.nom_etablissement || "ÉTABLISSEMENT TCHIBANVUNYA"} — votre partenaire de confiance pour des appareils d'occasion importés d'Europe, au cœur de Bukavu.
+            {params.nom_etablissement || "ÉTABLISSEMENT TCHIBANVUNYA"} — {params.apropos_intro || "votre partenaire de confiance pour des appareils d'occasion importés d'Europe, au cœur de Bukavu."}
           </motion.p>
         </div>
       </section>
@@ -85,10 +90,10 @@ export default function AProposClient({ agents, params }: Props) {
                 L'Europe à votre portée
               </h2>
               <p className="text-[var(--text)]/70 leading-relaxed mb-4">
-                Fondé à Bukavu, l'Établissement Tchibanvunya (ETCH) s'est donné pour mission de rendre accessibles des appareils électroniques et des meubles de qualité européenne à la population du Sud-Kivu.
+                {params.apropos_mission_p1 || "Fondé à Bukavu, l'Établissement Tchibanvunya (ETCH) s'est donné pour mission de rendre accessibles des appareils électroniques et des meubles de qualité européenne à la population du Sud-Kivu."}
               </p>
               <p className="text-[var(--text)]/70 leading-relaxed mb-6">
-                Chaque produit que nous importons est soigneusement sélectionné en Europe pour sa qualité et son état. Nous croyons que chaque famille mérite d'accéder à des équipements fiables à des prix justes.
+                {params.apropos_mission_p2 || "Chaque produit que nous importons est soigneusement sélectionné en Europe pour sa qualité et son état. Nous croyons que chaque famille mérite d'accéder à des équipements fiables à des prix justes."}
               </p>
               <div className="flex flex-col gap-3">
                 {[
@@ -167,7 +172,7 @@ export default function AProposClient({ agents, params }: Props) {
       </section>
 
       {/* Équipe */}
-      {agents.length > 0 && (
+      {equipeAffichee.length > 0 && (
         <section className="py-20 bg-[var(--bg)]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
@@ -175,7 +180,7 @@ export default function AProposClient({ agents, params }: Props) {
               <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-[var(--text)]">Notre équipe</h2>
             </motion.div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {agents.map((agent, i) => (
+              {equipeAffichee.map((agent, i) => (
                 <motion.div key={agent.id} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                   className="rounded-2xl overflow-hidden group" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
                   {/* Photo */}
@@ -201,13 +206,14 @@ export default function AProposClient({ agents, params }: Props) {
                     <div className="absolute top-4 right-4">
                       <span className="text-xs font-semibold px-3 py-1 rounded-full"
                         style={{ background: "rgba(0,0,0,0.7)", color: ROLE_COLORS[agent.role] || "#F5F0E8", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                        {ROLE_LABELS[agent.role] || agent.role}
+                        {equipeCustom.length > 0 ? agent.role : (ROLE_LABELS[agent.role] || agent.role)}
                       </span>
                     </div>
                   </div>
                   {/* Infos */}
                   <div className="p-5">
                     <h3 className="font-playfair text-lg font-bold text-[var(--text)] mb-1">{agent.nom}</h3>
+                    {agent.email && (
                     <a href={`mailto:${agent.email}`} className="flex items-center gap-2 text-sm transition-colors"
                       style={{ color: "rgba(245,240,232,0.45)" }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = "#C9A84C")}
@@ -217,6 +223,7 @@ export default function AProposClient({ agents, params }: Props) {
                       </svg>
                       {agent.email}
                     </a>
+                    )}
                   </div>
                 </motion.div>
               ))}

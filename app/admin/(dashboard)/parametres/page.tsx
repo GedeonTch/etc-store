@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ParametresClient from "./ParametresClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminParametres() {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "SUPER_ADMIN") redirect("/admin");

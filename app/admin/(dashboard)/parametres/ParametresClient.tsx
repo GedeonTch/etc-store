@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { compresserImage } from "@/lib/utils";
 
 interface Props { parametres: Record<string, string> }
 
+type Categorie = { nom: string; image: string };
+type MembreEquipe = { nom: string; poste: string; email: string; photo: string };
+
 export default function ParametresClient({ parametres: init }: Props) {
+  const router = useRouter();
   const [params, setParams] = useState(init);
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
@@ -32,12 +38,105 @@ export default function ParametresClient({ parametres: init }: Props) {
   const [nouvelleImage, setNouvelleImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Page À propos
+  const [equipe, setEquipe] = useState(() => {
+    try {
+      const parsed = JSON.parse(init.apropos_equipe || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }) as [MembreEquipe[], (e: MembreEquipe[]) => void];
+  const [nouveauMembre, setNouveauMembre] = useState({ nom: "", poste: "", email: "" });
+  const [photoMembre, setPhotoMembre] = useState<File | null>(null);
+  const [editingMembre, setEditingMembre] = useState<number | null>(null);
+  const [editPhotoMembre, setEditPhotoMembre] = useState<File | null>(null);
+  const [savingApropos, setSavingApropos] = useState(false);
+  const [savedApropos, setSavedApropos] = useState(false);
+
+  const uploadImage = async (file: File, nom: string, dossier: "categories" | "equipe") => {
+    const compresse = await compresserImage(file, 600, 0.65);
+    const formData = new FormData();
+    formData.append("file", compresse);
+    formData.append("nomCategorie", nom);
+    formData.append("dossier", dossier);
+    const res = await fetch("/api/upload-categorie", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload échoué");
+    return data.imagePath as string;
+  };
+
   const sauvegarderParam = async (cle: string) => {
     setSaving(cle);
-    await fetch("/api/parametres", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cle, valeur: params[cle] || "" }) });
+    const res = await fetch("/api/parametres", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cle, valeur: params[cle] || "" }),
+    });
     setSaving(null);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error || "Erreur lors de la sauvegarde");
+      return;
+    }
     setSaved(cle);
+    router.refresh();
     setTimeout(() => setSaved(null), 2000);
+  };
+
+  const sauvegarderCategories = async (cats: Categorie[] = categories): Promise<boolean> => {
+    setSavingCats(true);
+    const json = JSON.stringify(cats);
+    if (json.length > 60000) {
+      alert("Données trop volumineuses. Les images doivent être hébergées via Vercel Blob (BLOB_READ_WRITE_TOKEN).");
+      setSavingCats(false);
+      return false;
+    }
+    const res = await fetch("/api/parametres", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cle: "categories", valeur: json }),
+    });
+    setSavingCats(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error || "Erreur lors de la sauvegarde des catégories");
+      return false;
+    }
+    setSavedCats(true);
+    router.refresh();
+    setTimeout(() => setSavedCats(false), 3000);
+    return true;
+  };
+
+  const sauvegarderApropos = async () => {
+    setSavingApropos(true);
+    const updates = [
+      { cle: "apropos_intro", valeur: params.apropos_intro || "" },
+      { cle: "apropos_mission_p1", valeur: params.apropos_mission_p1 || "" },
+      { cle: "apropos_mission_p2", valeur: params.apropos_mission_p2 || "" },
+      { cle: "apropos_equipe", valeur: JSON.stringify(equipe) },
+    ];
+    const jsonEquipe = JSON.stringify(equipe);
+    if (jsonEquipe.length > 60000) {
+      alert("Équipe trop volumineuse. Utilisez Vercel Blob pour les photos.");
+      setSavingApropos(false);
+      return;
+    }
+    const res = await fetch("/api/parametres", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    setSavingApropos(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error || "Erreur lors de la sauvegarde");
+      return;
+    }
+    setSavedApropos(true);
+    router.refresh();
+    setTimeout(() => setSavedApropos(false), 3000);
   };
 
   const ajouterCategorie = async () => {
@@ -49,33 +148,24 @@ export default function ParametresClient({ parametres: init }: Props) {
 
     setUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("file", nouvelleImage);
-      formData.append("nomCategorie", val);
-
-      const res = await fetch("/api/upload-categorie", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload échoué");
-      const { imagePath } = await res.json();
-
-      setCategories([...categories, { nom: val, image: imagePath }]);
+      const imagePath = await uploadImage(nouvelleImage, val, "categories");
+      const newCats = [...categories, { nom: val, image: imagePath }];
+      setCategories(newCats);
       setNouvelleCategorie("");
       setNouvelleImage(null);
-      setSavedCats(false);
-      alert("✅ Catégorie ajoutée ! N'oublie pas de sauvegarder.");
+      await sauvegarderCategories(newCats);
     } catch (err) {
-      alert("❌ Erreur lors de l'upload: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+      alert("❌ Erreur : " + (err instanceof Error ? err.message : "Erreur inconnue"));
     } finally {
       setUploadingImage(false);
     }
   };
 
-  const supprimerCategorie = (i: number) => {
-    setCategories(categories.filter((_, j) => j !== i));
-    setSavedCats(false);
+  const supprimerCategorie = async (i: number) => {
+    if (!confirm("Supprimer cette catégorie ?")) return;
+    const newCats = categories.filter((_, j) => j !== i);
+    setCategories(newCats);
+    await sauvegarderCategories(newCats);
   };
 
   const modifierImageCategorie = async (i: number) => {
@@ -86,58 +176,34 @@ export default function ParametresClient({ parametres: init }: Props) {
 
     setUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("file", editImage);
-      formData.append("nomCategorie", categories[i].nom);
-
-      const res = await fetch("/api/upload-categorie", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload échoué");
-      const { imagePath } = await res.json();
-
+      const imagePath = await uploadImage(editImage, categories[i].nom, "categories");
       const newCats = [...categories];
-      newCats[i].image = imagePath;
+      newCats[i] = { ...newCats[i], image: imagePath };
       setCategories(newCats);
       setEditingIndex(null);
       setEditImage(null);
-      setSavedCats(false);
-      alert("✅ Image modifiée ! N'oublie pas de sauvegarder.");
+      await sauvegarderCategories(newCats);
     } catch (err) {
-      alert("❌ Erreur lors de l'upload: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+      alert("❌ Erreur : " + (err instanceof Error ? err.message : "Erreur inconnue"));
     } finally {
       setUploadingImage(false);
     }
   };
 
-  const monterCategorie = (i: number) => {
+  const monterCategorie = async (i: number) => {
     if (i === 0) return;
     const arr = [...categories];
     [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
     setCategories(arr);
-    setSavedCats(false);
+    await sauvegarderCategories(arr);
   };
 
-  const descendreCategorie = (i: number) => {
+  const descendreCategorie = async (i: number) => {
     if (i === categories.length - 1) return;
     const arr = [...categories];
     [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
     setCategories(arr);
-    setSavedCats(false);
-  };
-
-  const sauvegarderCategories = async () => {
-    setSavingCats(true);
-    await fetch("/api/parametres", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cle: "categories", valeur: JSON.stringify(categories) }),
-    });
-    setSavingCats(false);
-    setSavedCats(true);
-    setTimeout(() => setSavedCats(false), 3000);
+    await sauvegarderCategories(arr);
   };
 
   const changerMdp = async (e: React.FormEvent) => {
@@ -310,9 +376,91 @@ export default function ParametresClient({ parametres: init }: Props) {
         </div>
 
         {/* Sauvegarder */}
-        <button onClick={sauvegarderCategories} disabled={savingCats}
+        <button onClick={() => sauvegarderCategories()} disabled={savingCats}
           className="w-full py-3 rounded-xl bg-[var(--gold)] text-[#0A0A0A] font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity">
-          {savingCats ? "Sauvegarde..." : savedCats ? "✅ Catégories sauvegardées !" : "Sauvegarder les catégories"}
+          {savingCats ? "Sauvegarde..." : savedCats ? "✅ Catégories sauvegardées !" : "Re-sauvegarder les catégories"}
+        </button>
+        <p className="text-xs text-[var(--text)]/30 mt-2 text-center">Les modifications sont sauvegardées automatiquement.</p>
+      </Section>
+
+      {/* Page À propos */}
+      <Section titre="Page À propos">
+        <p className="text-xs text-[var(--text)]/40 mb-4">
+          Modifiez le contenu de la page /a-propos et gérez les membres de l'équipe avec leurs photos.
+        </p>
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="text-xs text-[var(--text)]/50 uppercase tracking-wide mb-1.5 block">Introduction (sous-titre hero)</label>
+            <textarea rows={2} value={params.apropos_intro || ""} onChange={(e) => setParams({ ...params, apropos_intro: e.target.value })} className={`${inputCls} resize-none`} />
+          </div>
+          <div>
+            <label className="text-xs text-[var(--text)]/50 uppercase tracking-wide mb-1.5 block">Mission — paragraphe 1</label>
+            <textarea rows={3} value={params.apropos_mission_p1 || ""} onChange={(e) => setParams({ ...params, apropos_mission_p1: e.target.value })} className={`${inputCls} resize-none`} />
+          </div>
+          <div>
+            <label className="text-xs text-[var(--text)]/50 uppercase tracking-wide mb-1.5 block">Mission — paragraphe 2</label>
+            <textarea rows={3} value={params.apropos_mission_p2 || ""} onChange={(e) => setParams({ ...params, apropos_mission_p2: e.target.value })} className={`${inputCls} resize-none`} />
+          </div>
+        </div>
+
+        <p className="text-xs text-[var(--text)]/50 uppercase tracking-wide mb-3">Membres de l'équipe</p>
+        <div className="space-y-2 mb-4">
+          {equipe.map((m, i) => (
+            <div key={i} className="p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)]">
+              {editingMembre === i ? (
+                <div className="space-y-2">
+                  <input type="file" accept="image/*" onChange={(e) => setEditPhotoMembre(e.target.files?.[0] || null)} className="w-full text-sm text-[var(--text)]/60 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-[var(--gold)]/20 file:text-[var(--gold)]" />
+                  <div className="flex gap-2">
+                    <button onClick={async () => {
+                      if (!editPhotoMembre) return;
+                      setUploadingImage(true);
+                      try {
+                        const photo = await uploadImage(editPhotoMembre, m.nom, "equipe");
+                        const arr = [...equipe]; arr[i] = { ...arr[i], photo };
+                        setEquipe(arr); setEditingMembre(null); setEditPhotoMembre(null);
+                      /* saved with apropos */ } catch (e) { alert(e instanceof Error ? e.message : "Erreur"); }
+                      finally { setUploadingImage(false); }
+                    }} disabled={!editPhotoMembre || uploadingImage} className="flex-1 px-3 py-2 rounded-lg bg-[var(--gold)] text-[#0A0A0A] text-sm font-semibold disabled:opacity-50">Confirmer photo</button>
+                    <button onClick={() => { setEditingMembre(null); setEditPhotoMembre(null); }} className="px-3 py-2 rounded-lg bg-[var(--border)] text-sm">Annuler</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <img src={m.photo || "/logo-etch.png"} alt={m.nom} className="w-12 h-12 rounded-full object-cover cursor-pointer" onClick={() => setEditingMembre(i)} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text)]">{m.nom}</p>
+                    <p className="text-xs text-[var(--text)]/50">{m.poste}{m.email ? ` · ${m.email}` : ""}</p>
+                  </div>
+                  <button onClick={() => setEditingMembre(i)} className="text-xs text-[var(--gold)]">Photo</button>
+                  <button onClick={() => setEquipe(equipe.filter((_, j) => j !== i))} className="text-xs text-red-400">Suppr.</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-3 mb-4 p-4 rounded-xl bg-[var(--bg)] border border-[var(--border)]/50">
+          <input type="text" placeholder="Nom *" value={nouveauMembre.nom} onChange={(e) => setNouveauMembre({ ...nouveauMembre, nom: e.target.value })} className={inputCls} />
+          <input type="text" placeholder="Poste (ex: Directeur, Agent...)" value={nouveauMembre.poste} onChange={(e) => setNouveauMembre({ ...nouveauMembre, poste: e.target.value })} className={inputCls} />
+          <input type="email" placeholder="Email (optionnel)" value={nouveauMembre.email} onChange={(e) => setNouveauMembre({ ...nouveauMembre, email: e.target.value })} className={inputCls} />
+          <input type="file" accept="image/*" onChange={(e) => setPhotoMembre(e.target.files?.[0] || null)} className="w-full text-sm text-[var(--text)]/60 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-[var(--gold)]/20 file:text-[var(--gold)]" />
+          <button onClick={async () => {
+            if (!nouveauMembre.nom.trim() || !photoMembre) { alert("Nom et photo requis"); return; }
+            setUploadingImage(true);
+            try {
+              const photo = await uploadImage(photoMembre, nouveauMembre.nom, "equipe");
+              setEquipe([...equipe, { nom: nouveauMembre.nom.trim(), poste: nouveauMembre.poste.trim(), email: nouveauMembre.email.trim(), photo }]);
+              setNouveauMembre({ nom: "", poste: "", email: "" }); setPhotoMembre(null);
+            } catch (e) { alert(e instanceof Error ? e.message : "Erreur"); }
+            finally { setUploadingImage(false); }
+          }} disabled={uploadingImage} className="w-full px-4 py-2.5 rounded-xl bg-[var(--gold)] text-[#0A0A0A] text-sm font-semibold disabled:opacity-50">
+            {uploadingImage ? "Upload..." : "+ Ajouter un membre"}
+          </button>
+        </div>
+
+        <button onClick={sauvegarderApropos} disabled={savingApropos}
+          className="w-full py-3 rounded-xl bg-[var(--gold)] text-[#0A0A0A] font-semibold text-sm hover:opacity-90 disabled:opacity-50">
+          {savingApropos ? "Sauvegarde..." : savedApropos ? "✅ Page À propos sauvegardée !" : "Sauvegarder la page À propos"}
         </button>
       </Section>
 

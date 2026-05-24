@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +23,22 @@ export async function PUT(req: NextRequest) {
   const updates = Array.isArray(body) ? body : [body];
 
   for (const { cle, valeur } of updates) {
+    if (typeof valeur === "string" && valeur.length > 60000) {
+      return NextResponse.json({
+        error: "Données trop volumineuses. Utilisez Vercel Blob pour les images (BLOB_READ_WRITE_TOKEN).",
+      }, { status: 413 });
+    }
+
     await prisma.parametre.upsert({
       where: { cle },
       update: { valeur },
       create: { cle, valeur },
     });
   }
+
+  revalidatePath("/");
+  revalidatePath("/catalogue");
+  revalidatePath("/a-propos");
 
   return NextResponse.json({ success: true });
 }
