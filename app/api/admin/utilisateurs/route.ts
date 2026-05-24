@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "SUPER_ADMIN") {

@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
  * Exporte les données utilisateurs en CSV ou JSON
  * Usage: GET /api/admin/utilisateurs/export?format=csv
  */
+
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if ((session?.user as any)?.role !== "SUPER_ADMIN") {
