@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ProduitsAdminClient from "./ProduitsAdminClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminProduits() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;

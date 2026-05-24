@@ -8,17 +8,52 @@ import { useLangue } from "@/contexts/LangueContext";
 
 interface Props {
   produitsVedette: any[];
+  produitsRecents: any[];
   tousLesProduits: any[];
   tauxCDF: number;
   categories: Array<{ nom: string; image: string }>;
 }
 
-export default function HomeClient({ produitsVedette, tousLesProduits, tauxCDF, categories }: Props) {
+export default function HomeClient({ produitsVedette, produitsRecents, tousLesProduits, tauxCDF, categories }: Props) {
   const { t } = useLangue();
 
   return (
     <>
       <Hero3D imagesCarrousel={tousLesProduits} />
+
+      {/* Derniers arrivages */}
+      {produitsRecents.length > 0 && (
+        <section className="py-20 bg-[var(--bg)]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex items-end justify-between mb-10"
+            >
+              <div>
+                <p className="text-[var(--gold)] text-sm font-medium uppercase tracking-widest mb-2">— Nouveautés</p>
+                <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-[var(--text)]">
+                  Derniers arrivages
+                </h2>
+              </div>
+              <Link href="/catalogue" className="hidden sm:flex items-center gap-2 text-sm text-[var(--gold)] hover:opacity-70 transition-opacity">
+                {t("voir_catalogue")}
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {produitsRecents.map((p, i) => (
+                <ProductCard key={p.id} {...p} tauxCDF={tauxCDF} index={i} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Produits en vedette */}
       {produitsVedette.length > 0 && (

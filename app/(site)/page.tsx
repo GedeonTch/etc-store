@@ -24,6 +24,12 @@ export default async function HomePage() {
     take: 8,
   });
 
+  const produitsRecents = await prisma.produit.findMany({
+    where: { disponible: true },
+    orderBy: { creeLe: "desc" },
+    take: 8,
+  });
+
   // Récupérer toutes les images des produits pour le carrousel hero
   const tousLesProduits = await prisma.produit.findMany({
     where: { disponible: true },
@@ -41,6 +47,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       produitsVedette={JSON.parse(JSON.stringify(produitsVedette))}
+      produitsRecents={JSON.parse(JSON.stringify(produitsRecents))}
       tousLesProduits={JSON.parse(JSON.stringify(tousLesProduits))}
       tauxCDF={tauxCDF}
       categories={categories}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { parserPhotos, formatUSD } from "@/lib/utils";
@@ -11,6 +12,7 @@ const FORM_VIDE = { titre: "", description: "", prixUSD: "", etat: "Excellent", 
 interface Props { produits: any[]; tauxCDF: number; categories: Array<{nom: string; image: string}>; role: string }
 
 export default function ProduitsAdminClient({ produits: init, tauxCDF, categories, role }: Props) {
+  const router = useRouter();
   const [produits, setProduits] = useState(init);
   const [modal, setModal] = useState<"creer" | "modifier" | null>(null);
   const [produitEdite, setProduitEdite] = useState<any>(null);
@@ -154,6 +156,7 @@ export default function ProduitsAdminClient({ produits: init, tauxCDF, categorie
       }
 
       setModal(null);
+      router.refresh();
     } catch (e) {
       console.error("Erreur sauvegarde:", e);
       alert("Erreur réseau. Vérifiez votre connexion.");

@@ -3,6 +3,9 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import CatalogueClient from "./CatalogueClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Catalogue — ETCH Tchibanvunya",
   description: "Parcourez notre catalogue d'appareils d'occasion importés d'Europe. Téléphones, écrans, générateurs, meubles. Bukavu, Sud-Kivu.",
