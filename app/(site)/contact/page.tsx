@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import ContactClient from "./ContactClient";
 
 export const metadata: Metadata = {
-  title: "Contacter ETCH — Bukavu, Sud-Kivu",
-  description: "Contactez l'Établissement Tchibanvunya (ETCH) à Bukavu. Formulaire, WhatsApp, téléphone et adresse.",
+  title: "Contact & Négociations — ETCH Bukavu",
+  description: "Contactez ETCH, envoyez un message ou négociez via notre espace de discussion.",
 };
 
 export default function ContactPage() {

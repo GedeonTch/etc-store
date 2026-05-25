@@ -83,7 +83,7 @@ export default function Footer({ siteParams }: Props) {
                 { href: "/", label: t("accueil") },
                 { href: "/catalogue", label: t("catalogue") },
                 { href: "/a-propos", label: "À propos" },
-                { href: "/contact", label: t("contact") },
+                { href: "/contact", label: t("contact_negociations") },
                 { href: "/credits", label: "Crédits" },
               ].map((item) => (
                 <li key={item.href}>

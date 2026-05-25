@@ -93,7 +93,7 @@ export default function Header({ siteParams = {} }: { siteParams?: ParametresSit
               { href: "/", label: t("accueil") },
               { href: "/catalogue", label: t("catalogue") },
               { href: "/a-propos", label: "À propos" },
-              { href: "/contact", label: t("contact"), badge: true },
+              { href: "/contact", label: t("contact_negociations"), badge: true },
             ].map((item) => (
               <Link key={item.href} href={item.href} className={`text-sm font-medium transition-colors duration-200 relative ${isActive(item.href)}`}>
                 {item.label}
@@ -162,7 +162,7 @@ export default function Header({ siteParams = {} }: { siteParams?: ParametresSit
                 { href: "/", label: t("accueil") },
                 { href: "/catalogue", label: t("catalogue") },
                 { href: "/a-propos", label: "À propos" },
-                { href: "/contact", label: t("contact"), badge: true },
+                { href: "/contact", label: t("contact_negociations"), badge: true },
               ].map((item) => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOuvert(false)}
                   className={`block px-4 py-2.5 rounded-lg text-sm font-medium relative ${pathname === item.href ? "bg-[var(--gold)]/10 text-[var(--gold)]" : "hover:bg-[var(--card)]"}`}>

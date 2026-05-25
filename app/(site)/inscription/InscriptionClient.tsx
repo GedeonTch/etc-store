@@ -7,14 +7,14 @@ import { motion } from "framer-motion";
 import { useLangue } from "@/contexts/LangueContext";
 const cV={hidden:{},visible:{transition:{staggerChildren:0.04,delayChildren:0.05}}};
 const lV={hidden:{opacity:0,y:20,rotateX:-70,scale:0.9},visible:{opacity:1,y:0,rotateX:0,scale:1,transition:{type:"spring" as const,stiffness:200,damping:18}}};
-type F={nom:string;email:string;telephone:string;motDePasse:string;confirm:string;photo:File|null};
+type F={nom:string;email:string;telephone:string;motDePasse:string;confirm:string};
 export default function InscriptionClient(){
   const {t}=useLangue();
   const router=useRouter();
   const searchParams=useSearchParams();
   const redirect=searchParams.get("redirect")||"/";
   const canvasRef=useRef<HTMLCanvasElement>(null);
-  const [form,setForm]=useState<F>({nom:"",email:"",telephone:"",motDePasse:"",confirm:"",photo:null});
+  const [form,setForm]=useState<F>({nom:"",email:"",telephone:"",motDePasse:"",confirm:""});
   const [showPwd,setShowPwd]=useState(false);
   const [showCfm,setShowCfm]=useState(false);
   const [erreur,setErreur]=useState("");
@@ -66,16 +66,29 @@ export default function InscriptionClient(){
     if(form.motDePasse!==form.confirm){setErreur(t("mdp_non_correspond"));return;}
     setLoading(true);
     try{
-      const fd=new FormData();
-      fd.append("nom",form.nom);fd.append("email",form.email);fd.append("telephone",form.telephone);fd.append("motDePasse",form.motDePasse);
-      if(form.photo)fd.append("photo",form.photo);
-      const res=await fetch("/api/auth/inscription",{method:"POST",body:fd});
+      const res=await fetch("/api/auth/inscription",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          nom:form.nom,
+          email:form.email.trim().toLowerCase(),
+          telephone:form.telephone,
+          motDePasse:form.motDePasse,
+        }),
+      });
       const data=await res.json();
       if(!res.ok){setErreur(data.error||t("erreur_inscription"));setLoading(false);return;}
-      const login=await signIn("credentials",{email:form.email.trim().toLowerCase(),password:form.motDePasse,loginType:"client",userAgent:navigator.userAgent,redirect:false});
-      setLoading(false);
-      if(login?.ok){router.push(redirect);router.refresh();}
-      else router.push(`/connexion?redirect=${encodeURIComponent(redirect)}`);
+
+      const accueil=redirect==="/"||redirect==="/inscription"||redirect==="/connexion"?"/":redirect;
+
+      await signIn("credentials",{
+        email:form.email.trim().toLowerCase(),
+        password:form.motDePasse,
+        loginType:"client",
+        userAgent:navigator.userAgent,
+        redirect:true,
+        callbackUrl:accueil,
+      });
     }catch{setErreur(t("erreur_inscription"));setLoading(false);}
   };
   const g1={background:"linear-gradient(135deg,#C9A84C 0%,#F0D080 45%,#C9A84C 100%)",WebkitBackgroundClip:"text" as const,WebkitTextFillColor:"transparent" as const,backgroundClip:"text" as const};
@@ -136,13 +149,6 @@ export default function InscriptionClient(){
                 </div>
               </div>
             ))}
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-widest mb-2 block" style={{color:"rgba(201,168,76,0.6)"}}>Photo (optionnelle)</label>
-              <input type="file" accept="image/*" onChange={(e)=>setForm({...form,photo:e.target.files?.[0]||null})}
-                className="w-full text-sm cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:cursor-pointer"
-                style={{color:"rgba(245,240,232,0.5)"}}/>
-              {form.photo&&<p className="text-xs mt-1.5 flex items-center gap-1.5" style={{color:"rgba(201,168,76,0.6)"}}><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>{form.photo.name}</p>}
-            </div>
             {erreur&&<motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} className="rounded-xl px-4 py-3" style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)"}}><p className="text-red-400 text-sm">{erreur}</p></motion.div>}
             <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 mt-2"
               style={{background:loading?"rgba(201,168,76,0.5)":"linear-gradient(135deg,#C9A84C 0%,#E8C060 50%,#C9A84C 100%)",color:"#0A0A0A",boxShadow:loading?"none":"0 4px 20px rgba(201,168,76,0.3)"}}
