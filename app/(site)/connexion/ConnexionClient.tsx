@@ -12,6 +12,7 @@ export default function ConnexionClient(){
   const router=useRouter();
   const searchParams=useSearchParams();
   const redirect=searchParams.get("redirect")||"/";
+  const compteCree=searchParams.get("compte_cree")==="1";
   const canvasRef=useRef<HTMLCanvasElement>(null);
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
@@ -126,6 +127,11 @@ export default function ConnexionClient(){
                 </button>
               </div>
             </div>
+            {compteCree&&!erreur&&(
+              <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} className="rounded-xl px-4 py-3" style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)"}}>
+                <p className="text-green-400 text-sm">Compte créé ! Connectez-vous avec votre email et mot de passe.</p>
+              </motion.div>
+            )}
             {erreur&&(
               <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} className="rounded-xl px-4 py-3" style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)"}}>
                 <p className="text-red-400 text-sm">{erreur}</p>

@@ -81,14 +81,22 @@ export default function InscriptionClient(){
 
       const accueil=redirect==="/"||redirect==="/inscription"||redirect==="/connexion"?"/":redirect;
 
-      await signIn("credentials",{
+      const login=await signIn("credentials",{
         email:form.email.trim().toLowerCase(),
         password:form.motDePasse,
         loginType:"client",
         userAgent:navigator.userAgent,
-        redirect:true,
-        callbackUrl:accueil,
+        redirect:false,
       });
+      setLoading(false);
+
+      if(login?.ok){
+        window.location.href=accueil;
+        return;
+      }
+
+      // Compte créé — rediriger vers connexion client (pas admin)
+      router.push(`/connexion?redirect=${encodeURIComponent(accueil)}&compte=cree=1`);
     }catch{setErreur(t("erreur_inscription"));setLoading(false);}
   };
   const g1={background:"linear-gradient(135deg,#C9A84C 0%,#F0D080 45%,#C9A84C 100%)",WebkitBackgroundClip:"text" as const,WebkitTextFillColor:"transparent" as const,backgroundClip:"text" as const};
