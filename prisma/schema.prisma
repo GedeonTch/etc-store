@@ -1,12 +1,12 @@
 // Schéma Prisma — ETCH Store
-// Base de données : MySQL hébergée sur Railway
+// Base de données : postgresql hébergée sur Railway
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

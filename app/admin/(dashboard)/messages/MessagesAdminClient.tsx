@@ -31,16 +31,27 @@ export default function MessagesAdminClient({ messages: init, role }: Props) {
   const envoyerReponse = async () => {
     if (!reponse.trim() || !selectionne) return;
     setEnvoi("loading");
-    const res = await fetch(`/api/messages/${selectionne.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reponse }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setMessages((prev) => prev.map((m) => m.id === updated.id ? updated : m));
+    try {
+      const res = await fetch(`/api/messages/${selectionne.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reponse: reponse.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Impossible d'envoyer la réponse");
+        setEnvoi("idle");
+        return;
+      }
+      const updated = { ...selectionne, ...data, produit: data.produit ?? selectionne.produit };
+      setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
       setSelectionne(updated);
+      setReponse(updated.reponse || reponse.trim());
       setEnvoi("ok");
+      setTimeout(() => setEnvoi("idle"), 2000);
+    } catch {
+      alert("Erreur réseau lors de l'envoi");
+      setEnvoi("idle");
     }
   };
 

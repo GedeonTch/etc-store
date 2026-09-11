@@ -49,7 +49,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
-  const message = await prisma.message.update({ where: { id: params.id }, data });
+  const message = await prisma.message.update({
+    where: { id: params.id },
+    data,
+    include: { produit: { select: { titre: true } } },
+  });
   return NextResponse.json(message);
 }
 
