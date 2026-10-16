@@ -14,7 +14,7 @@ async function main() {
 
   // upsert avec update — corrige le rôle et le hash si le compte existe déjà
   const admin = await prisma.user.upsert({
-    where: { email: "etsTchibanvunya@gmail.com" },
+    where: { email: "etstchibanvunya@gmail.com" },
     update: {
       motDePasse: hash,
       role: Role.SUPER_ADMIN,
@@ -22,7 +22,7 @@ async function main() {
     },
     create: {
       nom: "Administrateur ETCH",
-      email: "etsTchibanvunya@gmail.com",
+      email: "etstchibanvunya@gmail.com",
       motDePasse: hash,
       role: Role.SUPER_ADMIN,
       motDePasseChange: false,
@@ -78,7 +78,7 @@ async function main() {
   console.log(`✅ ${parametres.length} paramètres créés`);
   console.log("🎉 Seed terminé !");
   console.log("─────────────────────────────────────────");
-  console.log("  Email    : etsTchibanvunya@gmail.com");
+  console.log("  Email    : etstchibanvunya@gmail.com");
   console.log("  Mot de passe : ADMIN123");
   console.log("  ⚠ Changez ce mot de passe immédiatement !");
   console.log("─────────────────────────────────────────");

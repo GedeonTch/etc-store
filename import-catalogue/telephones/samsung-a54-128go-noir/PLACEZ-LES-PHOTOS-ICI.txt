@@ -1,0 +1,1 @@
+Placez ici les photos du produit : face.jpg, dos.jpg, … Supprimez ce fichier txt avant l'import.

@@ -33,7 +33,7 @@ model User {
 
 model Produit {
   id          String         @id @default(cuid())
-  titre       String
+  titre       String  @unique
   description String         @db.Text
   prixUSD     Float
   etat        String

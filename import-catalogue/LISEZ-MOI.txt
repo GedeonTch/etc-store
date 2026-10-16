@@ -1,0 +1,61 @@
+═══════════════════════════════════════════════════════════════
+ Dossier d'import ETCH Store — mode d'emploi
+═══════════════════════════════════════════════════════════════
+
+1. Copiez ce dossier à la racine du projet et RENOMMEZ-LE
+   exactement :  import-catalogue
+
+2. Structure attendue :
+
+   import-catalogue/
+   ├── chaises-fauteuils/          ← un dossier par catégorie
+   │   ├── fauteuil-cuir-marron-3-places/   ← un sous-dossier par produit
+   │   │   ├── info.json           ← la fiche du produit (obligatoire)
+   │   │   ├── 1.jpg               ← vos photos (ordre alphabétique,
+   │   │   ├── 2.jpg                   la 1re sert de couverture)
+   │   │   └── 3.jpg
+   │   └── chaise-bureau-noire/
+   │       ├── info.json
+   │       └── face.jpg
+   ├── telephones/
+   │   └── …/
+   └── …
+
+3. Noms des dossiers catégories (accents et majuscules tolérés,
+   le script normalise) :
+
+   chaises-fauteuils      → Chaises & Fauteuils
+   ecrans-plats           → Écrans plats
+   radios-modernes        → Radios modernes
+   telephones             → Téléphones
+   ecouteurs-modernes     → Écouteurs modernes
+   chaussures-hommes      → Chaussures hommes
+   tables-modernes        → Tables modernes
+   salons-complets        → Salons complets
+   valises                → Valises
+   divers                 → Divers
+
+4. Contenu de info.json (voir les 2 exemples fournis) :
+   - titre        : obligatoire, ≥ 3 caractères
+   - description  : obligatoire, ≥ 10 caractères
+   - prixUSD      : obligatoire, nombre > 0 (ex. 120 ou 12.5)
+   - etat         : obligatoire — "Excellent" | "Très bon" | "Bon" | "Correct"
+   - quantite     : optionnel (défaut 1)
+   - vedette      : optionnel (défaut false → non mis en avant)
+
+5. Commandes (depuis la racine du projet) :
+
+   npm run import-catalogue -- --dry-run     ← vérifie TOUT sans rien écrire
+   npm run import-catalogue                  ← import réel (Blob + DB)
+
+   Puis test à petite échelle si gros volume :
+   npm run import-catalogue -- --limit=3
+
+6. Règles :
+   - Au moins 1 photo par produit (jpg, jpeg, png, webp) ; max 12.
+   - Photos compressées automatiquement (≤1600px, WebP) → inutile de
+     les retoucher au préalable ; les originaux restent sur votre PC.
+   - Un produit déjà en DB (même titre + même catégorie) est ignoré :
+     vous pouvez relancer le script sans crainte pour ajouter des nouveautés.
+   - Correction = éditer info.json / remplacer les photos, puis relancer.
+═══════════════════════════════════════════════════════════════
