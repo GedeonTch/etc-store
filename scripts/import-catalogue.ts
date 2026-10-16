@@ -3,10 +3,20 @@
 // Usage :
 //   npm run import-catalogue -- --dry-run   → analyse seule, rien n'est écrit (ni DB, ni Blob)
 //   npm run import-catalogue                → import réel (Vercel Blob + base de données)
+//   npm run import-catalogue -- --prep      → prépare les photos en vrac (voir plus bas)
 //
 // Options :
 //   --dir=chemin     dossier d'import (défaut : ./import-catalogue)
 //   --limit=N        ne traite que les N premiers produits (test à petite échelle)
+//
+// Mode --prep (organisation automatique) :
+//   Si vous avez déposé des photos directement à la racine d'un dossier
+//   catégorie (ex. import-catalogue/chaises-fauteuils/*.jpg), --prep crée pour
+//   chaque photo un sous-dossier "a-completer-<nom>/" contenant la photo et un
+//   info.json squelette (volontairement incomplet : le --dry-run les signalera
+//   tant que vous n'aurez pas rempli titre, description et prix). Les dossiers
+//   déjà existants ne sont jamais écrasés : --prep peut être relancé après
+//   chaque nouvel ajout de photos en vrac.
 //
 // Arborescence attendue dans le dossier d'import :
 //
@@ -311,6 +321,75 @@ async function optimiser(buf: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
+// ─── Mode --prep : ranger les photos en vrac dans des sous-dossiers ─────────
+
+const SQUELETTE_INFO = {
+  titre: "",          // ← À REMPLIR
+  description: "",    // ← À REMPLIR (≥ 10 caractères)
+  prixUSD: 0,         // ← À REMPLIR (> 0)
+  etat: "Bon",        // Excellent | Très bon | Bon | Correct
+  quantite: 1,
+  vedette: false,
+};
+
+function preparer(dossierImport: string) {
+  console.log("──────────────────────────────────────────────────");
+  console.log("Préparation (--prep) : rangement des photos en vrac");
+  console.log("──────────────────────────────────────────────────\n");
+
+  let crees = 0;
+
+  const dossiersCategories = fs
+    .readdirSync(dossierImport, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+
+  for (const nomCat of dossiersCategories.sort()) {
+    const slugCat = slugifier(nomCat);
+    if (!CATEGORIES[slugCat]) {
+      console.log(`⏭  ${nomCat} — catégorie inconnue, ignorée (renommez-la parmi : ${Object.keys(CATEGORIES).join(", ")})`);
+      continue;
+    }
+
+    const cheminCat = path.join(dossierImport, nomCat);
+    const entrees = fs.readdirSync(cheminCat, { withFileTypes: true });
+    // On ne traite QUE les fichiers image posés directement à la racine de la catégorie
+    const photosVrac = entrees.filter((e) => e.isFile() && estImage(e.name)).map((e) => e.name);
+    const autresFichiers = entrees.filter((e) => e.isFile() && !estImage(e.name)).map((e) => e.name);
+
+    for (const f of autresFichiers) {
+      console.log(`ℹ️  ${nomCat}/${f} — fichier non image, laissé en place (le script l'ignore).`);
+    }
+
+    if (photosVrac.length === 0) {
+      console.log(`✔ ${nomCat} — rien en vrac.`);
+      continue;
+    }
+
+    for (const photo of photosVrac.sort()) {
+      const base = slugifier(path.basename(photo, path.extname(photo)));
+      let cible = path.join(cheminCat, `a-completer-${base || "photo"}`);
+      let suffixe = 2;
+      while (fs.existsSync(cible)) {
+        cible = path.join(cheminCat, `a-completer-${base || "photo"}-${suffixe}`);
+        if (suffixe > 99) break;
+        suffixe++;
+      }
+      fs.mkdirSync(cible);
+      fs.renameSync(path.join(cheminCat, photo), path.join(cible, photo));
+      fs.writeFileSync(path.join(cible, "info.json"), JSON.stringify(SQUELETTE_INFO, null, 2) + "\n", "utf8");
+      crees++;
+    }
+    console.log(`✔ ${nomCat} — ${photosVrac.length} photo(s) rangée(s) dans des sous-dossiers a-completer-*/`);
+  }
+
+  console.log(`\nTerminé : ${crees} sous-dossier(s) créé(s).`);
+  if (crees > 0) {
+    console.log("👉 Remplissez maintenant chaque info.json (titre, description, prixUSD — les champs vides)");
+    console.log("   puis : npm run import-catalogue -- --dry-run");
+  }
+}
+
 // ─── Programme principal ─────────────────────────────────────────────────────
 
 async function main() {
@@ -319,17 +398,24 @@ async function main() {
   const limitArg = arg("limit");
   const limit = limitArg ? parseInt(limitArg, 10) : null;
 
-  console.log("──────────────────────────────────────────────────");
-  console.log(`Import catalogue ETCH — ${dryRun ? "ANALYSE (--dry-run, rien n'est écrit)" : "IMPORT RÉEL"}`);
-  console.log(`Dossier : ${dossierImport}`);
-  if (limit) console.log(`Limite : ${limit} produit(s)`);
-  console.log("──────────────────────────────────────────────────\n");
-
   if (!fs.existsSync(dossierImport)) {
     console.error(`❌ Dossier introuvable : ${dossierImport}`);
     console.error("   Créez-le avec vos dossiers de catégories, ou utilisez --dir=chemin.");
     process.exit(1);
   }
+
+  // Mode --prep : organisation pure sur le disque local, pas de DB ni de Blob.
+  // (contrôlé avant toute bannière et toute vérification d'environnement)
+  if (drapeau("prep")) {
+    preparer(dossierImport);
+    return;
+  }
+
+  console.log("──────────────────────────────────────────────────");
+  console.log(`Import catalogue ETCH — ${dryRun ? "ANALYSE (--dry-run, rien n'est écrit)" : "IMPORT RÉEL"}`);
+  console.log(`Dossier : ${dossierImport}`);
+  if (limit) console.log(`Limite : ${limit} produit(s)`);
+  console.log("──────────────────────────────────────────────────\n");
 
   // Vérifications d'environnement avant tout travail coûteux
   if (!dryRun) {
