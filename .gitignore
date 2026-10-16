@@ -8,5 +8,10 @@ prisma/migrations/
 npm-debug.log*
 .DS_Store
 .vercel
-public/categories/
-public/categories/
+# Dossier local d'import en masse : les photos brutes restent sur le PC
+# (elles partent sur Vercel Blob), mais les info.json peuvent être commités
+# pour garder un historique versionné des descriptions du catalogue.
+import-catalogue/**/*.jpg
+import-catalogue/**/*.jpeg
+import-catalogue/**/*.png
+import-catalogue/**/*.webp
